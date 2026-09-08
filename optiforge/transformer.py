@@ -5,12 +5,28 @@ from .analyzer import CodeProfile
 
 
 MODEL_OPTIONS = {
-    "Qwen3.5 2B (Ollama)": ("qwen3.5:2b", "ollama"),
-    "GPT-OSS 120B (Groq)": ("openai/gpt-oss-120b", "groq"),
-    "Gemini 2.5 Pro": ("gemini-2.5-pro", "gemini"),
-    "Llama 3.2 (Ollama)": ("llama3.2:latest", "ollama"),
-    "Qwen3 Coder 30B (OpenRouter)": (
-        "qwen/qwen3-coder-30b-a3b-instruct",
+    "GPT-OSS 120B (Groq)": (
+        "openai/gpt-oss-120b",
+        "groq",
+    ),
+
+    "Qwen3.8 27B (Groq)": (
+        "qwen/qwen3.8-27b",
+        "groq",
+    ),
+
+    "Qwen3 Coder 480B (OpenRouter)": (
+        "qwen/qwen3-coder-480b-a35b-instruct",
+        "openrouter",
+    ),
+
+    "Qwen3 Coder Next (OpenRouter)": (
+        "qwen/qwen3-coder-next",
+        "openrouter",
+    ),
+
+    "Qwen3.6 27B (OpenRouter)": (
+        "qwen/qwen3.6-27b",
         "openrouter",
     ),
 }
@@ -35,22 +51,11 @@ Rules:
 
 
 def _client(provider):
-    if provider == "ollama":
-        return OpenAI(
-            base_url="http://localhost:11434/v1",
-            api_key="ollama",
-        )
 
     if provider == "groq":
         return OpenAI(
             base_url="https://api.groq.com/openai/v1",
             api_key=os.getenv("GROQ_API_KEY") or "",
-        )
-
-    if provider == "gemini":
-        return OpenAI(
-            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-            api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "",
         )
 
     if provider == "openrouter":
@@ -119,7 +124,7 @@ def generate_code(
     model, provider = MODEL_OPTIONS[model_display_name]
     client = _client(provider)
 
-    if provider != "ollama" and not client.api_key:
+    if not client.api_key:
         raise ValueError(
             f"{model_display_name} requires its API key in the environment."
         )
