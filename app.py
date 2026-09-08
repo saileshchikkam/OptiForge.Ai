@@ -50,6 +50,8 @@ input, textarea, select {
 
 button.primary {
     color: #111 !important;
+    background: var(--of-orange) !important;
+    border-color: var(--of-orange) !important;
 }
 
 button.primary:hover {
@@ -89,20 +91,106 @@ textarea, .code_editor {
     font-family: Consolas, "Courier New", monospace !important;
 }
 
-button.primary {
-    background: var(--of-orange) !important;
-    border-color: var(--of-orange) !important;
-}
-
 .section {
     margin-top: 18px;
+}
+
+/* Results use the complete horizontal page width. */
+#full_width_result {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#full_width_result .prose,
+#history,
+#algorithm_analysis {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+/* Keep Markdown tables stretched across the result area. */
+#full_width_result table {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+/* Three equal result cards under Algorithm Analysis. */
+#result_grid {
+    width: 100% !important;
+    max-width: none !important;
+    gap: 16px !important;
+    margin-top: 16px !important;
+}
+
+#result_card {
+    min-width: 0 !important;
+    flex: 1 1 0 !important;
+    width: 0 !important;
+    max-width: none !important;
+}
+
+#result_card .prose {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+#result_card table {
+    width: 100% !important;
+    max-width: none !important;
 }
 
 #history {
     margin-top: 28px;
     margin-bottom: 20px;
 }
+
+/* Dark mode only. Light mode remains Gradio Default. */
+html:not(.of-light) .gradio-container {
+    background: var(--of-bg) !important;
+}
+
+html:not(.of-light) body,
+html:not(.of-light) .gradio-container,
+html:not(.of-light) .block,
+html:not(.of-light) .form,
+html:not(.of-light) .panel {
+    background: var(--of-bg) !important;
+}
+
+html:not(.of-light) label,
+html:not(.of-light) .wrap,
+html:not(.of-light) .prose,
+html:not(.of-light) h1,
+html:not(.of-light) h2,
+html:not(.of-light) h3,
+html:not(.of-light) h4,
+html:not(.of-light) p,
+html:not(.of-light) td,
+html:not(.of-light) th {
+    color: #f2f2f2 !important;
+}
+
+html:not(.of-light) input,
+html:not(.of-light) textarea,
+html:not(.of-light) select {
+    background: var(--of-panel) !important;
+    color: #f2f2f2 !important;
+    border-color: var(--of-border) !important;
+}
+
+html:not(.of-light) table,
+html:not(.of-light) th,
+html:not(.of-light) td {
+    border-color: #3a3a3a !important;
+}
+
+html:not(.of-light) #result_card {
+    background: var(--of-bg) !important;
+}
 """
+
 
 
 DEFAULT_SOURCE = """
@@ -154,7 +242,6 @@ if __name__ == "__main__":
 
 DEFAULT_INPUT = "5\n1 2 3 4 5\n"
 
-
 def _md(text: str) -> str:
     return text.replace("`", "\\`")
 
@@ -199,8 +286,10 @@ def render_comparison(
         )
     else:
         correctness = "PASS" if verification and verification.verified else "FAIL"
-        status = "Optimized" if target_language.lower() == source_language.lower() else (
-            "Faster" if benchmark.faster else "Slower"
+        status = (
+            "Optimized"
+            if target_language.lower() == source_language.lower()
+            else ("Faster" if benchmark.faster else "Slower")
         )
         rows.append(
             f"| {target_language.upper()} | "
@@ -297,8 +386,6 @@ def optimize_ui(source_code, source_language, target_language, model_name, test_
         candidate = result["candidate"]
         generated = candidate.source_code if candidate.compiled else ""
 
-        # Persist the complete optimization run so history survives
-        # browser refreshes and normal application restarts.
         save_run(
             source_code=source_code,
             generated_code=generated,
@@ -320,11 +407,11 @@ def optimize_ui(source_code, source_language, target_language, model_name, test_
                 result["verification"],
                 result["recommendation"],
             ),
+            render_history(),
             render_algorithm(result["algorithm"]),
             render_verification(result["verification"]),
             render_performance(result["benchmark"]),
             render_recommendation(result),
-            render_history(),
             "",
         )
 
@@ -332,11 +419,11 @@ def optimize_ui(source_code, source_language, target_language, model_name, test_
         return (
             "",
             "### 🌍 Language Comparison\n\nOptimization did not complete.",
+            render_history(),
             "### 🧠 Algorithm Analysis\n\nUnavailable.",
             "### 🧪 Verification\n\nUnavailable.",
             "### ⚡ Performance\n\nUnavailable.",
             "### 🏆 OptiForge Recommendation\n\n**REJECT** — The operation could not be completed.",
-            render_history(),
             f"❌ {type(exc).__name__}: {exc}",
         )
 
@@ -382,7 +469,7 @@ with gr.Blocks(title="OptiForge.Ai", css=CSS, theme=gr.themes.Default()) as app:
         )
         model_name = gr.Dropdown(
             choices=list(MODEL_OPTIONS.keys()),
-            value="Qwen3 Coder 30B (OpenRouter)",
+            value=list(MODEL_OPTIONS.keys())[0],
             label="Model",
         )
 
@@ -401,26 +488,43 @@ with gr.Blocks(title="OptiForge.Ai", css=CSS, theme=gr.themes.Default()) as app:
 
     gr.Markdown("## Results")
 
-    comparison_result = gr.Markdown(
-        "Run an optimization to see the measured comparison."
-    )
-    algorithm_result = gr.Markdown(
-        "Algorithm analysis will appear here."
-    )
-    verification_result = gr.Markdown(
-        "Verification results will appear here."
-    )
-    performance_result = gr.Markdown(
-        "Benchmark results will appear here."
-    )
-    recommendation_result = gr.Markdown(
-        "Recommendation will appear here."
-    )
+    # Full-width result section 1: Language Comparison
+    with gr.Column(elem_id="full_width_result"):
+        comparison_result = gr.Markdown(
+            "Run an optimization to see the measured comparison."
+        )
 
-    history_result = gr.Markdown(
-        render_history(),
-        elem_id="history"
-    )
+    # Full-width result section 2: Persistent Comparison History
+    with gr.Column(elem_id="full_width_result"):
+        history_result = gr.Markdown(
+            render_history(),
+            elem_id="history",
+        )
+
+    # Full-width result section 3: Algorithm Analysis
+    with gr.Column(elem_id="full_width_result"):
+        algorithm_result = gr.Markdown(
+            "Algorithm analysis will appear here.",
+            elem_id="algorithm_analysis",
+        )
+
+    # Three equal-width result grids:
+    # Verification | Performance | OptiForge Recommendation
+    with gr.Row(equal_height=True, elem_id="result_grid"):
+        with gr.Column(scale=1, min_width=0, elem_id="result_card"):
+            verification_result = gr.Markdown(
+                "Verification results will appear here."
+            )
+
+        with gr.Column(scale=1, min_width=0, elem_id="result_card"):
+            performance_result = gr.Markdown(
+                "Benchmark results will appear here."
+            )
+
+        with gr.Column(scale=1, min_width=0, elem_id="result_card"):
+            recommendation_result = gr.Markdown(
+                "Recommendation will appear here."
+            )
 
     error_result = gr.Markdown(visible=True)
 
@@ -440,11 +544,11 @@ with gr.Blocks(title="OptiForge.Ai", css=CSS, theme=gr.themes.Default()) as app:
         outputs=[
             generated_code_box,
             comparison_result,
+            history_result,
             algorithm_result,
             verification_result,
             performance_result,
             recommendation_result,
-            history_result,
             error_result,
         ],
     )
@@ -456,4 +560,4 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=port
     )
-             
+    
