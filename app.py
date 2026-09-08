@@ -420,4 +420,9 @@ with gr.Blocks(title="OptiForge.Ai", css=CSS, theme=gr.themes.Base()) as app:
 
 
 if __name__ == "__main__":
-    app.launch()
+    port = int(os.getenv("PORT", "10000"))
+    app.launch(
+        server_name="0.0.0.0",
+        server_port=port
+    )
+    
