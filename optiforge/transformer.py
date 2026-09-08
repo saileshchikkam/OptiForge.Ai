@@ -34,22 +34,32 @@ Rules:
 """
 
 
-def _clients():
-    return {
-        "ollama": OpenAI(base_url="http://localhost:11434/v1", api_key="ollama"),
-        "groq": OpenAI(
+def _client(provider):
+    if provider == "ollama":
+        return OpenAI(
+            base_url="http://localhost:11434/v1",
+            api_key="ollama",
+        )
+
+    if provider == "groq":
+        return OpenAI(
             base_url="https://api.groq.com/openai/v1",
             api_key=os.getenv("GROQ_API_KEY") or "",
-        ),
-        "gemini": OpenAI(
+        )
+
+    if provider == "gemini":
+        return OpenAI(
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
             api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "",
-        ),
-        "openrouter": OpenAI(
+        )
+
+    if provider == "openrouter":
+        return OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=os.getenv("OPENROUTER_API_KEY") or "",
-        ),
-    }
+        )
+
+    raise ValueError(f"Unsupported provider: {provider}")
 
 
 def build_transformation_prompt(
@@ -107,7 +117,7 @@ def generate_code(
         raise ValueError(f"Unknown model selection: {model_display_name}")
 
     model, provider = MODEL_OPTIONS[model_display_name]
-    client = _clients()[provider]
+    client = _client(provider)
 
     if provider != "ollama" and not client.api_key:
         raise ValueError(
