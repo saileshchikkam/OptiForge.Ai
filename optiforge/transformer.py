@@ -5,6 +5,11 @@ from .analyzer import CodeProfile
 
 
 MODEL_OPTIONS = {
+    "Qwen3 Coder 30B (OpenRouter)": (
+        "qwen/qwen3-coder-30b-a3b-instruct",
+        "openrouter",
+    ),
+
     "GPT-OSS 120B (Groq)": (
         "openai/gpt-oss-120b",
         "groq",
@@ -15,20 +20,6 @@ MODEL_OPTIONS = {
         "groq",
     ),
 
-    "Qwen3 Coder 480B (OpenRouter)": (
-        "qwen/qwen3-coder-480b-a35b-instruct",
-        "openrouter",
-    ),
-
-    "Qwen3 Coder Next (OpenRouter)": (
-        "qwen/qwen3-coder-next",
-        "openrouter",
-    ),
-
-    "Qwen3.6 27B (OpenRouter)": (
-        "qwen/qwen3.6-27b",
-        "openrouter",
-    ),
 }
 
 
