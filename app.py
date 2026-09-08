@@ -5,7 +5,7 @@ import gradio as gr
 from optiforge.analyzer import analyze_code, analyze_algorithm
 from optiforge.transformer import MODEL_OPTIONS
 from optiforge.pipeline import optimize
-from optiforge.history import save_run, render_history
+from optiforge.history import add_run, reset_history, render_history
 
 
 load_dotenv()
@@ -367,7 +367,14 @@ def render_recommendation(result) -> str:
 """
 
 
-def optimize_ui(source_code, source_language, target_language, model_name, test_input):
+def optimize_ui(
+    source_code,
+    source_language,
+    target_language,
+    model_name,
+    test_input,
+    history,
+):
     try:
         if not source_code or not source_code.strip():
             raise ValueError("Enter source code first.")
@@ -386,7 +393,8 @@ def optimize_ui(source_code, source_language, target_language, model_name, test_
         candidate = result["candidate"]
         generated = candidate.source_code if candidate.compiled else ""
 
-        save_run(
+        updated_history = add_run(
+            history,
             source_code=source_code,
             generated_code=generated,
             source_language=source_language,
@@ -407,7 +415,8 @@ def optimize_ui(source_code, source_language, target_language, model_name, test_
                 result["verification"],
                 result["recommendation"],
             ),
-            render_history(),
+            render_history(updated_history),
+            updated_history,
             render_algorithm(result["algorithm"]),
             render_verification(result["verification"]),
             render_performance(result["benchmark"]),
@@ -419,13 +428,19 @@ def optimize_ui(source_code, source_language, target_language, model_name, test_
         return (
             "",
             "### 🌍 Language Comparison\n\nOptimization did not complete.",
-            render_history(),
+            render_history(history),
+            history,
             "### 🧠 Algorithm Analysis\n\nUnavailable.",
             "### 🧪 Verification\n\nUnavailable.",
             "### ⚡ Performance\n\nUnavailable.",
             "### 🏆 OptiForge Recommendation\n\n**REJECT** — The operation could not be completed.",
             f"❌ {type(exc).__name__}: {exc}",
         )
+
+
+def reset_current_code_history():
+    """Reset history whenever the source code changes."""
+    return reset_history()
 
 
 with gr.Blocks(title="OptiForge.Ai", css=CSS, theme=gr.themes.Default()) as app:
@@ -494,10 +509,13 @@ with gr.Blocks(title="OptiForge.Ai", css=CSS, theme=gr.themes.Default()) as app:
             "Run an optimization to see the measured comparison."
         )
 
-    # Full-width result section 2: Persistent Comparison History
+    # Session-only history: private to this browser session and reset when
+    # the source code changes. It is intentionally not written to disk.
+    history_state = gr.State([])
+
     with gr.Column(elem_id="full_width_result"):
         history_result = gr.Markdown(
-            render_history(),
+            render_history([]),
             elem_id="history",
         )
 
@@ -540,17 +558,28 @@ with gr.Blocks(title="OptiForge.Ai", css=CSS, theme=gr.themes.Default()) as app:
             target_language,
             model_name,
             test_input,
+            history_state,
         ],
         outputs=[
             generated_code_box,
             comparison_result,
             history_result,
+            history_state,
             algorithm_result,
             verification_result,
             performance_result,
             recommendation_result,
             error_result,
         ],
+    )
+
+    # Any source-code edit starts a new comparison-history session for the
+    # newly entered code. Model, target language, and test-input changes do
+    # not reset the history.
+    source_code.change(
+        fn=reset_current_code_history,
+        inputs=[source_code],
+        outputs=[history_state, history_result],
     )
 
 
@@ -560,4 +589,5 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=port
     )
+    
     

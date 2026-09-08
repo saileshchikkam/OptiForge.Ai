@@ -1,25 +1,7 @@
-import json
 from datetime import datetime, timezone
-from pathlib import Path
 
-HISTORY_FILE = Path(__file__).resolve().parent.parent / "data" / "comparison_history.json"
-
-
-def _ensure_file():
-    HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
-    if not HISTORY_FILE.exists():
-        HISTORY_FILE.write_text("[]", encoding="utf-8")
-
-
-def load_history():
-    _ensure_file()
-    try:
-        return json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return []
-
-
-def save_run(
+def add_run(
+    history,
     *,
     source_code,
     generated_code,
@@ -31,7 +13,8 @@ def save_run(
     verification,
     recommendation,
 ):
-    history = load_history()
+    """Add one optimization run to the current user's in-memory session history."""
+    history = list(history or [])
 
     run = {
         "run_id": len(history) + 1,
@@ -65,22 +48,18 @@ def save_run(
         }
 
     history.append(run)
-    HISTORY_FILE.write_text(
-        json.dumps(history, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
-
-    return run
+    return history
 
 
-def render_history():
-    history = load_history()
+def reset_history():
+    """Return a completely fresh history for the current source code."""
+    return [], "## 📊 Comparison History\n\nNo optimization runs yet."
 
+
+def render_history(history):
+    """Render only the current user's current-source-code history."""
     if not history:
-        return (
-            "## 📊 Comparison History\n\n"
-            "No optimization runs yet."
-        )
+        return "## 📊 Comparison History\n\nNo optimization runs yet."
 
     rows = [
         "## 📊 Comparison History",
@@ -101,20 +80,10 @@ def render_history():
             else f"❌ FAIL ({verification['passed_tests']}/{verification['total_tests']})"
         )
 
-        runtime = (
-            f"{benchmark['generated_average']:.6f}s"
-            if benchmark
-            else "—"
-        )
-        speedup = (
-            f"{benchmark['speedup']:.2f}×"
-            if benchmark
-            else "—"
-        )
+        runtime = f"{benchmark['generated_average']:.6f}s" if benchmark else "—"
+        speedup = f"{benchmark['speedup']:.2f}×" if benchmark else "—"
         improvement = (
-            f"{benchmark['improvement_percent']:.2f}%"
-            if benchmark
-            else "—"
+            f"{benchmark['improvement_percent']:.2f}%" if benchmark else "—"
         )
 
         rows.append(
