@@ -392,7 +392,7 @@ with gr.Blocks(title="OptiForge.Ai", css=CSS, theme=gr.themes.Base()) as app:
     recommendation_result = gr.Markdown(
         "Recommendation will appear here."
     )
-    error_result = gr.Markdown(visible=False)
+    error_result = gr.Markdown(visible=True)
 
     gr.Markdown(
         "<div id='footer'>Built with Gradio</div>"
