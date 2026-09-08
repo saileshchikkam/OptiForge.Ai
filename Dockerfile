@@ -1,7 +1,7 @@
 FROM python:3.12-slim
 
 RUN apt-get update && \
-    apt-get install -y g++ openjdk-17-jdk && \
+    apt-get install -y g++ openjdk-21-jdk && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
