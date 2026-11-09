@@ -1,4 +1,5 @@
 # ⚡ OptiForge.Ai
+[![How it works](https://www.gitskins.com/api/badge/diagram?repo=saileshchikkam/OptiForge.Ai)](https://www.gitskins.com/saileshchikkam/OptiForge.Ai)
 
 > **AI proposes. The compiler executes. The verifier checks. The benchmark measures. OptiForge decides.**
 
